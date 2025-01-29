@@ -5,16 +5,18 @@ from datetime import datetime
 
 # Server Configuration
 HOST = '127.0.0.1'
-PORT = 12346
+PORT = 12349
 MAX_CLIENTS = 3
-FILE_REPOSITORY = "./files"
+FILE_REPOSITORY = os.getcwd() 
 
 clients = {}
 client_count = 0
+client_label = 0
 lock = threading.Lock()
 
 def handle_client(conn, addr, client_name):
     global clients
+    global client_count
     print(f"[NEW CONNECTION] {client_name} connected from {addr}")
     conn.send(f"Welcome {client_name}! Type your message or commands (status, list, exit).".encode())
     
@@ -57,11 +59,13 @@ def handle_client(conn, addr, client_name):
     
     conn.close()
     with lock:
-        del clients[client_name]
+        clients[client_name]['disconnected_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"[DISCONNECTED] {client_name} from {addr}")
-
+    client_count -= 1
+    print(f"[ACTIVE CONNECTIONS] {client_count}")
 def start_server():
     global client_count
+    global client_label
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((HOST, PORT))
     server.listen(MAX_CLIENTS)
@@ -70,12 +74,13 @@ def start_server():
     while True:
         conn, addr = server.accept()
         with lock:
-            if len(clients) >= MAX_CLIENTS:
+            if client_count >= MAX_CLIENTS:
                 conn.send("Server is full. Try again later.".encode())
                 conn.close()
                 continue
             client_count += 1
-            client_name = f"Client{client_count:02d}"
+            client_label += 1
+            client_name = f"Client{client_label:02d}"
         
         thread = threading.Thread(target=handle_client, args=(conn, addr, client_name))
         thread.start()

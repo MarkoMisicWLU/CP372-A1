@@ -1,14 +1,15 @@
 import socket
 
 HOST = '127.0.0.1'
-PORT = 12346
+PORT = 12349
 
 def start_client():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((HOST, PORT))
-    print(client.recv(1024).decode())  
+    first_msg = client.recv(1024).decode()
+    print(first_msg)  
     
-    while True:
+    while first_msg != 'Server is full. Try again later.':
         msg = input("You: ")
         client.send(msg.encode())
         
@@ -19,7 +20,10 @@ def start_client():
         print(f"Server: {response}")
     
     client.close()
-    print("[DISCONNECTED] You have left the chat.")
+    if first_msg != 'Server is full. Try again later.':
+        print("[DISCONNECTED] Server is full.")
+    else:
+        print("[DISCONNECTED] You have left the chat.")
 
 if __name__ == "__main__":
     start_client()
