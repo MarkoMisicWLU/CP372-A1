@@ -23,9 +23,10 @@ def handle_client(conn, addr, client_name):
     with lock:
         clients[client_name] = {'addr': addr, 'connected_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'disconnected_at': None}
     
+    list_mode = False
     while True:
         try:
-            msg = conn.recv(1024).decode()
+            msg = conn.recv(1024).decode().strip()
             if not msg:
                 break
             
@@ -41,16 +42,18 @@ def handle_client(conn, addr, client_name):
             
             elif msg.lower() == "list":
                 files = os.listdir(FILE_REPOSITORY) if os.path.exists(FILE_REPOSITORY) else []
-                conn.send("\n".join(files).encode() if files else "No files available.".encode())
+                conn.send(("\n".join(files) + "\nEnter the file name to download:").encode() if files else "No files available.".encode())
+                list_mode = True
             
-            elif msg.startswith("get "):
-                filename = msg[4:].strip()
+            elif list_mode:
+                filename = msg
                 filepath = os.path.join(FILE_REPOSITORY, filename)
                 if os.path.exists(filepath):
                     with open(filepath, 'rb') as f:
                         conn.sendall(f.read())
                 else:
                     conn.send(f"File '{filename}' not found.".encode())
+                list_mode = False
             
             else:
                 conn.send(f"{msg}ACK".encode())
@@ -63,6 +66,8 @@ def handle_client(conn, addr, client_name):
     print(f"[DISCONNECTED] {client_name} from {addr}")
     client_count -= 1
     print(f"[ACTIVE CONNECTIONS] {client_count}")
+
+
 def start_server():
     global client_count
     global client_label

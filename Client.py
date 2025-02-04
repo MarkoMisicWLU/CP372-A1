@@ -21,9 +21,9 @@ def start_client():
     
     client.close()
     if first_msg != 'Server is full. Try again later.':
-        print("[DISCONNECTED] Server is full.")
+        print("[DISCONNECTED] You have left the server.")
     else:
-        print("[DISCONNECTED] You have left the chat.")
+        print("[DISCONNECTED] Server is full")
 
 if __name__ == "__main__":
     start_client()
